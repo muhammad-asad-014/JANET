@@ -94,6 +94,32 @@ def run_regula_falsi(f, a, b, tol, max_iter):
         
     return iterations, None
 
+def run_secant(f, x0, x1, tol, max_iter):
+    iterations = []
+    x_prev, x_curr = mp.mpf(x0), mp.mpf(x1)
+    for i in range(1, max_iter + 1):
+        f_prev, f_curr = f(x_prev), f(x_curr)
+        if f_curr - f_prev == 0: return None, "Division by zero in Secant method."
+        x_next = x_curr - f_curr * (x_curr - x_prev) / (f_curr - f_prev)
+        err = abs(x_next - x_curr)
+        iterations.append({"Iter": i, "x_n": mp.nstr(x_curr), "f(x_n)": mp.nstr(f_curr), "Abs Error": mp.nstr(err)})
+        if err < mp.mpf(tol): break
+        x_prev, x_curr = x_curr, x_next
+    return iterations, None
+
+# --- FIXED-POINT ITERATION ---
+# Note: User must input g(x) such that x = g(x)
+def run_fixed_point(g, x0, tol, max_iter):
+    iterations = []
+    x = mp.mpf(x0)
+    for i in range(1, max_iter + 1):
+        x_next = g(x)
+        err = abs(x_next - x)
+        iterations.append({"Iter": i, "x_n": mp.nstr(x), "g(x_n)": mp.nstr(x_next), "Abs Error": mp.nstr(err)})
+        if err < mp.mpf(tol): break
+        x = x_next
+    return iterations, None
+
 def run_newton(f, df, x0, tol, max_iter):
     iterations = []
     x = mp.mpf(x0)
@@ -130,7 +156,7 @@ try:
         st.subheader("Configuration")
         st.latex(f"f({vars_found[0]}) = {latex(expr)}")
         
-        method = st.selectbox("Numerical Method", ["Bisection", "Regula Falsi", "Newton-Raphson"])
+        method = st.selectbox("Numerical Method", ["Bisection", "Regula Falsi", "Newton-Raphson", "Secant"])
         max_i = st.number_input("Number of Iterations", min_value=1, max_value=500, value=20)
         tol = st.text_input("Tolerance", value="1e-30")
         
@@ -151,6 +177,14 @@ try:
                 iters, error = run_bisection(f_mp, a_val, b_val, tol, max_i)
             elif method == "Regula Falsi":
                 iters, error = run_regula_falsi(f_mp, a_val, b_val, tol, max_i)
+            elif method== 'Secant':
+                x0_s = st.text_input("First Guess x0", "0.0")
+                x1_s = st.text_input("Second Guess x1", "1.0")
+                iters, error = run_secant(f_mp, x0_s, x1_s, tol, max_i)
+            # elif method== 'Fixed-Point':
+            #      run_fixed_point(g, x0, tol, max_iter):
+            #     st.warning("Note: Equation must be in form x = g(x)")
+            #     iters, error = run_fixed_point(f_mp, x0_s, x1_s, tol, max_i)
             else:
                 iters, error = run_newton(f_mp, f_prime_mp, x0_val, tol, max_i)
             
