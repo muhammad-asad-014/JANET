@@ -7,7 +7,7 @@ from sympy import sympify, Symbol, E, pi, lambdify, diff, latex
 import re
 
 # --- CONFIGURATION ---
-st.set_page_config(page_title="High-Precision Numerical Lab", layout="wide")
+st.set_page_config(page_title="JANET", layout="wide")
 
 # --- UTILITY FUNCTIONS ---
 def clean_equation(user_str):
@@ -32,19 +32,36 @@ def get_math_objects(user_eq):
     return expr, vars_found, f_mp, f_np, f_prime_mp
 
 # --- SOLVER ENGINES ---
+
 def run_bisection(f, a, b, tol, max_iter):
     iterations = []
     a, b = mp.mpf(a), mp.mpf(b)
     if f(a) * f(b) >= 0: return None, "f(a) and f(b) must have opposite signs."
-
+    
+    prev_c = None
     for i in range(1, max_iter + 1):
         c = (a + b) / 2
         fc = f(c)
-        err = abs(b - a) / 2
-        iterations.append({"Iter": i, "a": mp.nstr(a), "b": mp.nstr(b), "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc), "Abs Error": mp.nstr(err)})
-        if abs(fc) < mp.mpf(tol): break
+        
+        # Calculate error as |current_c - prev_c|
+        if prev_c is not None:
+            err = abs(c - prev_c)
+        else:
+            err = "N/A" # First iteration has no previous c
+            
+        iterations.append({
+            "Iter": i, "a": mp.nstr(a), "b": mp.nstr(b), 
+            "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc), "Abs Error": mp.nstr(err) if err != "N/A" else err
+        })
+        
+        # Convergence check
+        if abs(fc) < mp.mpf(tol) or (prev_c is not None and err < mp.mpf(tol)):
+            break
+            
         if f(a) * fc < 0: b = c
         else: a = c
+        prev_c = c
+        
     return iterations, None
 
 def run_regula_falsi(f, a, b, tol, max_iter):
@@ -52,37 +69,56 @@ def run_regula_falsi(f, a, b, tol, max_iter):
     a, b = mp.mpf(a), mp.mpf(b)
     if f(a) * f(b) >= 0: return None, "f(a) and f(b) must have opposite signs."
 
+    prev_c = None
     for i in range(1, max_iter + 1):
         fa, fb = f(a), f(b)
-        # Regula Falsi Formula: c = (a*f(b) - b*f(a)) / (f(b) - f(a))
         c = (a*fb - b*fa) / (fb - fa)
         fc = f(c)
         
-        # In Regula Falsi, error is often tracked as the change in c
-        err = abs(fc) # Using residual as error for this method
+        if prev_c is not None:
+            err = abs(c - prev_c)
+        else:
+            err = "N/A"
+            
+        iterations.append({
+            "Iter": i, "a": mp.nstr(a), "b": mp.nstr(b), 
+            "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc), "Abs Error": mp.nstr(err) if err != "N/A" else err
+        })
         
-        iterations.append({"Iter": i, "a": mp.nstr(a), "b": mp.nstr(b), "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc), "Residual": mp.nstr(err)})
-        
-        if abs(fc) < mp.mpf(tol): break
+        if abs(fc) < mp.mpf(tol) or (prev_c is not None and err < mp.mpf(tol)):
+            break
+            
         if fa * fc < 0: b = c
         else: a = c
+        prev_c = c
+        
     return iterations, None
 
 def run_newton(f, df, x0, tol, max_iter):
     iterations = []
     x = mp.mpf(x0)
+    
     for i in range(1, max_iter + 1):
         fx, dfx = f(x), df(x)
         if dfx == 0: return None, "Derivative is zero. Method failed."
+        
         x_next = x - fx/dfx
-        err = abs(x_next - x)
-        iterations.append({"Iter": i, "x_n": mp.nstr(x), "f(x_n)": mp.nstr(fx), "Abs Error": mp.nstr(err)})
+        err = abs(x_next - x) # Difference between steps
+        
+        iterations.append({
+            "Iter": i, "x_n": mp.nstr(x), "f(x_n)": mp.nstr(fx), 
+            "Abs Error": mp.nstr(err)
+        })
+        
         x = x_next
-        if err < mp.mpf(tol): break
+        if err < mp.mpf(tol):
+            break
+            
     return iterations, None
+    
 
 # --- MAIN UI ---
-st.title("🔬 High-Precision Numerical Lab")
+st.title("🔬 JANET")
 user_input = st.text_input("Equation f(x) = 0", "exp(x) * sin(x) - 1")
 
 try:
