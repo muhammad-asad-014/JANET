@@ -82,7 +82,7 @@ def run_regula_falsi(f, a, b, tol, max_iter):
             
         iterations.append({
             "Iter": i, "a": mp.nstr(a), "b": mp.nstr(b), 
-            "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc), "Abs Error": mp.nstr(err) if err != "N/A" else err
+            "Root Guess": mp.nstr(c), "f(c)": mp.nstr(fc),"f(a)": mp.nstr(fa),"f(b)": mp.nstr(fb), "Abs Error": mp.nstr(err) if err != "N/A" else err
         })
         
         if abs(fc) < mp.mpf(tol) or (prev_c is not None and err < mp.mpf(tol)):
