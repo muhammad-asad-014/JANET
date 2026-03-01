@@ -134,7 +134,7 @@ st.sidebar.markdown("- **Power:** `x^2`\n- **Implicit:** `2x`\n- **Constants:** 
 precision = st.sidebar.slider("Precision", 15, 150, 50)
 mp.dps = precision
 
-st.title("🔬 JANET: Root-Finding Lab")
+st.title("🔬 JANET")
 user_input = st.text_input("Enter Equation f(x) or g(x)", "e^x * sin(x) - 1")
 
 try:
